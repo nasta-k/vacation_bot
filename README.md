@@ -50,7 +50,8 @@ Calendar | 21.05 23:59 (optional) | -
 ## Development requirements
 * database tool - **slick**
 * database schema 
-![db scheme](https://github.com/nasta-k/vacation_bot/blob/main/img.png)
+
+![db scheme](https://github.com/nasta-k/vacation_bot/blob/master/img.png)
 ## Git requirements
 Modules are developed in separate branches naming as follows basic, add_team, application, approval, calendar.
 ## Deployment requirements
