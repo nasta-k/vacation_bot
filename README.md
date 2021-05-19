@@ -41,12 +41,12 @@ Shows the vacations of the team.
 ## Deadlines
 Module | Deadline | Asignee
 | ----- | :-: | :-: |
-Basic | 17.05 23:59 | - 
-Team adding | 18.05 23:59 | - 
-Application for vacation | 19.05 23:59 | -
-Team approval | 20.05 23:59 | -
-Calendar | 21.05 23:59 (optional) | -
-**All** | **22.05 23:59** | -
+Basic | 19.05 23:59 | - 
+Team adding | 20.05 23:59 | - 
+Application for vacation | 21.05 23:59 | -
+Team approval | 22.05 23:59 | -
+Calendar | 22.05 23:59 (optional) | -
+**All** | **23.05 14:00** | -
 ## Development requirements
 * database tool - **slick**
 * database schema 
