@@ -1,62 +1,39 @@
 package services
 
 import cats.data.Validated.{Invalid, Valid}
+import cats.effect.IO
 import dao.{TeamMemberDAO, TeamMemberVacationDAO}
-import models.TeamMemberVacation
-import models.Types._
+import models_bot.TeamMemberVacation
+import models_bot.Types.ErrorMessage
+import utils.Validation.{VacationBoundaries, validate}
 
-import java.sql.Date
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
+trait VacationApplicationService[F[_]] {
+  def apply(startDate: String, endDate: String, username: String): F[Either[String, TeamMemberVacation]]
+
+  def confirm(teamMemberVacation: TeamMemberVacation): F[String]
+}
+
 object VacationApplicationService {
+  def apply(): VacationApplicationService[IO] = new VacationApplicationService[IO] {
+    override def apply(startDate: String, endDate: String, username: String): IO[Either[String, TeamMemberVacation]] = {
+      val validated = validateDate(startDate, endDate)
+      if (validated.isRight) {
+        val teamMemberId = Await.result(TeamMemberDAO.getByUsername(username), Duration.Inf)
+        IO(Right(TeamMemberVacation(TeamMemberVacationDAO.getLatest, teamMemberId.id,validated.right.get.startDate, validated.right.get.endDate, isApproved = false)))
+      }
+      else IO(Left(validated.left.get))
+    }
 
-  import utils.Validation._
+    override def confirm(teamMemberVacation: TeamMemberVacation): IO[String] = IO(TeamMemberVacationDAO.add(teamMemberVacation))
 
-  trait VacationService {
-    def validateDate(startDate: String, endDate: String): Either[ErrorMessage, VacationBoundaries]
-
-    def apply(startDate: Date, endDate: Date, username: Username): Either[ErrorMessage, TeamMemberVacation]
-
-    def awaitConfirmCommand: Either[ErrorMessage, Unit]
-
-    def confirm(teamMemberVacation: TeamMemberVacation): Either[ErrorMessage, SuccessMessage]
-  }
-
-  class VacationServiceImpl extends VacationService {
-    override def validateDate(startDate: String, endDate: String): Either[ErrorMessage, VacationBoundaries] = {
+    def validateDate(startDate: String, endDate: String): Either[ErrorMessage, VacationBoundaries] = {
       validate(startDate, endDate) match {
         case Valid(validVal) => Right(validVal)
         case Invalid(e) => Left(e.toString)
       }
     }
-
-    override def apply(startDate: Date, endDate: Date, username: Username): Either[ErrorMessage, TeamMemberVacation] = {
-      val teamMemberId = Await.result(TeamMemberDAO.getByUsername(username), Duration.Inf)
-      val vacationId = Await.result(TeamMemberVacationDAO.getLatest, Duration.Inf) match {
-        case Some(value) => value.id + 1
-        case None => 1
-      }
-      Right(TeamMemberVacation(vacationId, teamMemberId.id, startDate, endDate, isApproved = false))
-    }
-
-    override def awaitConfirmCommand: Either[ErrorMessage, Unit] = ???
-
-    override def confirm(teamMemberVacation: TeamMemberVacation): Either[ErrorMessage, SuccessMessage] = {
-      Await.result(TeamMemberVacationDAO.add(teamMemberVacation), Duration.Inf) match {
-        case 1 => Right("Application created successfully")
-        case 0 => Left("Application wasn't created")
-      }
-    }
-  }
-
-
-  def makeApplication(service: VacationService, startDate: String, endDate: String, username: Username): Either[ErrorMessage, SuccessMessage] = {
-    for {
-      validDate <- service.validateDate(startDate, endDate)
-      application <- service.apply(validDate.startDate, validDate.endDate, username)
-      _ <- service.awaitConfirmCommand
-      result <- service.confirm(application)
-    } yield result
   }
 }

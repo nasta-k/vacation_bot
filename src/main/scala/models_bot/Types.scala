@@ -1,4 +1,4 @@
-package models
+package models_bot
 
 object Types {
   type TeamName = String
