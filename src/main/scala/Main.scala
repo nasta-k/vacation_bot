@@ -18,7 +18,7 @@ object Main extends IOApp {
     Stream
       .resource(TelegramClient.global[IO](token))
       .flatMap { implicit client =>
-        Bot.polling[IO].follow(start, help, addTeam(addService), showTeamsKeyboard, appointPm(addService),
+        Bot.polling[IO].follow(start, help, addTeam(addService), addMe(addService), appointPm(addService),
           apply(vacationService), requestApproval(approvalService))
       }
       .compile.drain.as(ExitCode.Success)

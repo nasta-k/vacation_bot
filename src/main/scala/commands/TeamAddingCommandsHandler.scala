@@ -1,14 +1,8 @@
 package commands
 
 import canoe.api._
-import canoe.api.models.Keyboard
-import canoe.models.{CallbackButtonSelected, InlineKeyboardButton, InlineKeyboardMarkup, Update}
 import canoe.syntax._
-import cats.syntax.all._
-import cats.{Applicative, Monad}
 import dao.TeamDAO
-import fs2.Pipe
-import models_bot.Team
 import services.TeamAddingService
 
 
@@ -28,10 +22,13 @@ object TeamAddingCommandsHandler {
     } yield ()
   }
 
-  def showTeamsKeyboard[F[_] : TelegramClient]: Scenario[F, Unit] = {
+  def addMe[F[_] : TelegramClient](addService: TeamAddingService[F]): Scenario[F, Unit] = {
     for {
       msg <- Scenario.expect(command("add_member"))
       _ <- Scenario.eval(msg.chat.send(content = s"Choose team from which you're not a member of:\n${getTeam(msg.from.get.username.get)}"))
+      team <- Scenario.expect(text)
+      message <- Scenario.eval(addService.addTeamMember(msg.from.get.username.get, team, msg.from.get.id))
+      _ <- Scenario.eval(msg.chat.send(message))
     } yield ()
   }
 
